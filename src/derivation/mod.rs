@@ -3,18 +3,18 @@ pub fn bip32(){
 
 
 /*
-An HDW is organized as several 'accounts'. Accounts are numbered, the default account ("") being number 0. 
-Clients are not required to support more than one account - if not, they only use the default account.
+	An HDW is organized as several 'accounts'. Accounts are numbered, the default account ("") being number 0. 
+	Clients are not required to support more than one account - if not, they only use the default account.
 
-Each account is composed of two keypair chains: an internal and an external one. 
+	Each account is composed of two keypair chains: an internal and an external one. 
 
-The external keychain is used to generate new public addresses, 
+	The external keychain is used to generate new public addresses, 
 
-Internal keychain is used for all other operations (change addresses, generation addresses, ..., anything that doesn't need to be communicated). 
-Clients that do not support separate keychains for these should use the external one for everything.
+	Internal keychain is used for all other operations (change addresses, generation addresses, ..., anything that doesn't need to be communicated). 
+	Clients that do not support separate keychains for these should use the external one for everything.
 
-m/iH/0/k corresponds to the k'th keypair of the external chain of account number i of the HDW derived from master m.
-m/iH/1/k corresponds to the k'th keypair of the internal chain of account number i of the HDW derived from master m.
+	m/iH/0/k corresponds to the k'th keypair of the external chain of account number i of the HDW derived from master m.
+	m/iH/1/k corresponds to the k'th keypair of the internal chain of account number i of the HDW derived from master m.
 */
 
 /* 
