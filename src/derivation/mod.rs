@@ -77,6 +77,10 @@ pub fn bip44(){
 	 We define the following 5 levels in BIP32 path: 
 	 m / purpose' / coin_type' / account' / change / address_index
 	 example bank, donations, etc...
+	 coin_type bitcoin, lightcoin, namecoin or etherum,
+	 bitcoin=0
+	 bitcoin-testnet=1
+
 	 */
 
 }
