@@ -4,13 +4,12 @@ use bitcoin::{
     blockdata::{opcodes::all, script::Builder},
     psbt::{Input, PartiallySignedTransaction, Prevouts},
     secp256k1::{Message, Scalar, Secp256k1, SecretKey, All},
-    util::{sighash::{self, SighashCache}, taproot::TapSighashHash},
-    Address, EcdsaSig, Network, OutPoint, PackedLockTime, Script, Transaction, TxIn, TxOut,
+    util::{sighash::{ SighashCache}},
+    Address, Network, OutPoint, PackedLockTime, Script, Transaction, TxIn, TxOut,
     Witness, KeyPair, schnorr::TapTweak, SchnorrSig,
 };
-use bitcoin_hashes::{hash160, Hash, hex::ToHex};
 use bitcoincore_rpc::{Auth, Client, RpcApi};
-use miniscript::{psbt::PsbtExt, ToPublicKey};
+use miniscript::{psbt::PsbtExt};
 
 
 pub fn p2tr(secret_string: Option<&str>) {
@@ -24,6 +23,7 @@ pub fn p2tr(secret_string: Option<&str>) {
             secret_key
         }
     };
+	
 	let key_pair=KeyPair::from_secret_key(&secp, &secret);
 
 	let (x_only,_)=key_pair.x_only_public_key();
@@ -71,8 +71,15 @@ pub fn p2tr(secret_string: Option<&str>) {
         })
         .collect::<Vec<Transaction>>();
 
-    let out_put = vec![TxOut {
-        value: 1000000,
+ 	let prevouts =transaction_list.iter()
+	.flat_map(|tx|tx.output.clone())
+	.filter(|p|address.script_pubkey().eq(&p.script_pubkey))
+	.collect::<Vec<TxOut>>();
+
+	let total:u64 =prevouts.iter().map(|tx_out|tx_out.value).sum();
+
+   let out_put = vec![TxOut {
+        value: total-100000,
         script_pubkey: Address::from_str(
             "bcrt1prnpxwf9tpjm4jll4ts72s2xscq66qxep6w9hf6sqnvwe9t4gvqasklfhyj",
         )
@@ -80,7 +87,8 @@ pub fn p2tr(secret_string: Option<&str>) {
         .script_pubkey(),
     }];
 
-    let unsigned_tx = Transaction {
+
+	let unsigned_tx = Transaction {
         version: 2,
         lock_time: PackedLockTime(0),
         input: tx_in_list,
@@ -89,15 +97,11 @@ pub fn p2tr(secret_string: Option<&str>) {
 	
     let mut psbt = PartiallySignedTransaction::from_unsigned_tx(unsigned_tx.clone()).unwrap();
 
-
-	let prevouts =transaction_list.iter()
-	.flat_map(|tx|tx.output.clone())
-	.filter(|p|address.script_pubkey().eq(&p.script_pubkey))
-	.collect::<Vec<TxOut>>();
-
 	psbt.inputs=sign_all_unsigned_tx(&secp,&prevouts,  &unsigned_tx,&key_pair );
 
-	dbg!(psbt.finalize(&secp).unwrap());
+	let tx=psbt.finalize(&secp).unwrap().extract_tx();
+
+	client.send_raw_transaction(&tx).map(|tx|println!("transaction send transaction id is: {}",tx)).unwrap();
 
 
 }
@@ -137,7 +141,6 @@ fn sign_tx(secp: &Secp256k1<All>,index:usize,unsigned_tx: &Transaction,  prevout
 
     input.witness_script = Some(tx_out.script_pubkey.clone());
 
-	dbg!(sig.to_hex());
     input.tap_key_sig=Some(schnorr_sig);
 
     input.witness_utxo = Some(tx_out.clone());
